@@ -13,6 +13,7 @@ public class Matrix {
     private int height;
     private int width;
     private final ArrayList<ArrayList<Long>> values = new ArrayList<>(new ArrayList<>());
+    private ArrayList<ArrayList<Long>> transposedValues = new ArrayList<>(new ArrayList<>());
 
     public Matrix(String filename) {
         try {
@@ -46,12 +47,17 @@ public class Matrix {
     public void generateValues() {
         Random random = new Random();
         for (int i = 0; i < height; i++) {
-            ArrayList<Long> newValues = new ArrayList<>();
             for (int j = 0; j < width; j++) {
-                newValues.add(random.nextLong());
+                values.get(i).set(j, random.nextLong());
             }
-            values.add(newValues);
         }
+    }
+
+    public void transposedMatrix() {
+        transposedValues = new ArrayList<>(new ArrayList<>());
+            for (int j = 0; j < width; j++) {
+                transposedValues.add(getColumn(j));
+            }
     }
 
     public int getHeight() {
@@ -66,18 +72,26 @@ public class Matrix {
         return values.get(y).get(x);
     }
 
+    public Long getTransposedValues(int x, int y) {
+        return transposedValues.get(y).get(x);
+    }
+
     public void setValues(int x, int y, Long val) {
         values.get(x).set(y, val);
     }
 
     public ArrayList<Long> getColumn(int column) {
         ArrayList<Long> result = new ArrayList<>();
-        values.forEach(element -> result.add(element.get(column)));
+        values.forEach(row -> result.add(row.get(column)));
         return result;
     }
 
     public ArrayList<Long> getRow(int row) {
         return new ArrayList<>(values.get(row));
+    }
+
+    public ArrayList<Long> getTransposedRow(int row) {
+        return new ArrayList<>(transposedValues.get(row));
     }
 
     public Matrix multiply(Matrix matrix, int p) {
@@ -87,12 +101,15 @@ public class Matrix {
         }
 
         Matrix newMatrix = new Matrix(this.height, matrix.width);
+        this.transposedMatrix();
+        matrix.transposedMatrix();
+
         ExecutorService executorService = Executors.newFixedThreadPool(p);
 
         List<vectorMultiplication> task = new ArrayList<>();
         for (int i = 0; i < this.height; i++) {
             for (int j = 0; j < matrix.width; j++) {
-                task.add(new vectorMultiplication(i, j, getRow(i), matrix.getColumn(j)));
+                task.add(new vectorMultiplication(i, j, getRow(i), matrix.getTransposedRow(j)));
             }
         }
         try {
@@ -132,7 +149,7 @@ class vectorMultiplication implements Callable<String> {
     ArrayList<Long> second;
     int i, j;
 
-    public vectorMultiplication(int i, int  j, ArrayList<Long> first, ArrayList<Long> second) {
+    public vectorMultiplication(int i, int j, ArrayList<Long> first, ArrayList<Long> second) {
         this.i = i;
         this.j = j;
         this.first = first;

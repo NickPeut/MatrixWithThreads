@@ -26,6 +26,17 @@ public class MatrixTest {
     }
 
     @Test
+    void transposedMatrixTest() {
+        Matrix matrix = new Matrix("./src/files/firstMatrix.txt");
+        matrix.transposedMatrix();
+        for(int i = 0; i < matrix.getHeight(); i++) {
+            for(int j = 0; j < matrix.getWidth(); j++) {
+                Assertions.assertEquals(matrix.getValues(j, i), matrix.getTransposedValues(i, j));
+            }
+        }
+    }
+
+    @Test
     void parallelMultiplication() {
         Matrix matrix = new Matrix("./src/files/firstMatrix.txt");
         Matrix matrix2 = new Matrix("./src/files/secondMatrix.txt");
@@ -36,14 +47,34 @@ public class MatrixTest {
 
     @Test
     void testBigMultiplication() {
-        Matrix matrix = new Matrix(600, 700);
+        int n = 400, m = 400, k = 500;
+        Matrix matrix = new Matrix(n, m);
         matrix.generateValues();
-        Matrix matrix2 = new Matrix(700, 600);
+        Matrix matrix2 = new Matrix(m, k);
         matrix.generateValues();
-        int p = 4;
+
+        int p = 1;
         long start = System.currentTimeMillis();
         Matrix newMatrix = matrix.multiply(matrix2, p);
-        System.out.println("Время вычислений: " + (System.currentTimeMillis() - start) + "мс.");
+        System.out.println(p +" поток \nВремя вычислений: " + (System.currentTimeMillis() - start) + "мс.");
+
+        p = 2;
+        start = System.currentTimeMillis();
+        Matrix newMatrix2 = matrix.multiply(matrix2, p);
+        System.out.println(p +" потока \nВремя вычислений: " + (System.currentTimeMillis() - start) + "мс.");
+
+
+        p = 3;
+        start = System.currentTimeMillis();
+        Matrix newMatrix3 = matrix.multiply(matrix2, p);
+        System.out.println(p +" потока \nВремя вычислений: " + (System.currentTimeMillis() - start) + "мс.");
+
+
+        p = 4;
+        start = System.currentTimeMillis();
+        Matrix newMatrix4 = matrix.multiply(matrix2, p);
+        System.out.println( p +" потока \nВремя вычислений: " + (System.currentTimeMillis() - start) + "мс.");
+
         newMatrix.writeMatrixInFile("./src/files/resultMatrix.txt");
     }
 
