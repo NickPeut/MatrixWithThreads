@@ -6,11 +6,26 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.*;
 
 public class Matrix {
     private int height;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Matrix)) return false;
+        Matrix matrix = (Matrix) o;
+        return height == matrix.height && width == matrix.width && values.equals(matrix.values);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(height, width, values);
+    }
+
     private int width;
     private final List<List<Long>> values = new ArrayList<>(new ArrayList<>());
 

@@ -42,7 +42,7 @@ public class MatrixTest {
 
     @Test
     void testBigMultiplication() {
-        int n = 700, m = 800, k = 700;
+        int n = 700, m = 700, k = 700;
         Matrix matrix = new Matrix(n, m);
         matrix.generateValues();
         Matrix matrix2 = new Matrix(m, k);
@@ -55,29 +55,34 @@ public class MatrixTest {
         int p = 1;
         start = System.currentTimeMillis();
         Matrix newMatrix = matrix.multiplyThreads(matrix2, p);
-        System.out.println(p +" поток \nВремя вычислений: " + (System.currentTimeMillis() - start) + "мс.");
+        if(newMatrix.equals(newMatrix0))
+            System.out.println(p +" поток \nВремя вычислений: " + (System.currentTimeMillis() - start) + "мс.");
 
         p = 2;
         start = System.currentTimeMillis();
-        Matrix newMatrix2 = matrix.multiplyThreads(matrix2, p);
-        System.out.println(p +" потока \nВремя вычислений: " + (System.currentTimeMillis() - start) + "мс.");
+        newMatrix = matrix.multiplyThreads(matrix2, p);
+        if(newMatrix.equals(newMatrix0))
+            System.out.println(p +" потока \nВремя вычислений: " + (System.currentTimeMillis() - start) + "мс.");
 
 
         p = 3;
         start = System.currentTimeMillis();
-        Matrix newMatrix3 = matrix.multiplyThreads(matrix2, p);
-        System.out.println(p +" потока \nВремя вычислений: " + (System.currentTimeMillis() - start) + "мс.");
+        newMatrix = matrix.multiplyThreads(matrix2, p);
+        if(newMatrix.equals(newMatrix0))
+            System.out.println(p +" потока \nВремя вычислений: " + (System.currentTimeMillis() - start) + "мс.");
 
 
         p = 4;
         start = System.currentTimeMillis();
-        Matrix newMatrix4 = matrix.multiplyThreads(matrix2, p);
-        System.out.println( p +" потока \nВремя вычислений: " + (System.currentTimeMillis() - start) + "мс.");
+        newMatrix = matrix.multiplyThreads(matrix2, p);
+        if(newMatrix.equals(newMatrix0))
+            System.out.println( p +" потока \nВремя вычислений: " + (System.currentTimeMillis() - start) + "мс.");
 
         p = 8;
         start = System.currentTimeMillis();
-        Matrix newMatrix5 = matrix.multiplyThreads(matrix2, p);
-        System.out.println( p +" потока \nВремя вычислений: " + (System.currentTimeMillis() - start) + "мс.");
+        newMatrix = matrix.multiplyThreads(matrix2, p);
+        if(newMatrix.equals(newMatrix0))
+            System.out.println( p +" потока \nВремя вычислений: " + (System.currentTimeMillis() - start) + "мс.");
 
         newMatrix.writeMatrixInFile("./src/files/resultMatrix.txt");
     }
