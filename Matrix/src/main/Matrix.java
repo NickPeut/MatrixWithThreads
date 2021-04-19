@@ -12,15 +12,14 @@ import java.util.concurrent.*;
 public class Matrix {
     private int height;
     private int width;
-    private final ArrayList<ArrayList<Long>> values = new ArrayList<>(new ArrayList<>());
-    private ArrayList<ArrayList<Long>> transposedValues = new ArrayList<>(new ArrayList<>());
+    private final List<List<Long>> values = new ArrayList<>(new ArrayList<>());
 
     public Matrix(String filename) {
         try {
             BufferedReader reader = new BufferedReader(new FileReader(filename));
             String line;
             while ((line = reader.readLine()) != null) {
-                ArrayList<Long> lineValues = new ArrayList<>();
+                List<Long> lineValues = new ArrayList<>();
                 for (String i : line.split(" "))
                     lineValues.add(Long.parseLong(i));
                 values.add(lineValues);
@@ -36,7 +35,7 @@ public class Matrix {
         this.height = height;
         this.width = width;
         for (int i = 0; i < height; i++) {
-            ArrayList<Long> newValues = new ArrayList<>();
+            List<Long> newValues = new ArrayList<>();
             for (int j = 0; j < width; j++) {
                 newValues.add(0L);
             }
@@ -53,13 +52,6 @@ public class Matrix {
         }
     }
 
-    public void transposedMatrix() {
-        transposedValues = new ArrayList<>(new ArrayList<>());
-            for (int j = 0; j < width; j++) {
-                transposedValues.add(getColumn(j));
-            }
-    }
-
     public int getHeight() {
         return height;
     }
@@ -72,64 +64,62 @@ public class Matrix {
         return values.get(y).get(x);
     }
 
-    public Long getTransposedValues(int x, int y) {
-        return transposedValues.get(y).get(x);
-    }
-
     public void setValues(int x, int y, Long val) {
         values.get(x).set(y, val);
     }
 
-    public ArrayList<Long> getColumn(int column) {
-        ArrayList<Long> result = new ArrayList<>();
+    public List<Long> getColumn(int column) {
+        List<Long> result = new ArrayList<>();
         values.forEach(row -> result.add(row.get(column)));
         return result;
     }
 
-    public ArrayList<Long> getRow(int row) {
+    public List<Long> getRow(int row) {
         return new ArrayList<>(values.get(row));
     }
 
-    public ArrayList<Long> getTransposedRow(int row) {
-        return new ArrayList<>(transposedValues.get(row));
+    public Matrix simpleMultiply(Matrix matrix) {
+        if (this.width != matrix.height) {
+            System.err.println("Illegal matrix parameters");
+            return null;
+        }
+        Matrix newMatrix = new Matrix(this.height, matrix.width);
+
+        for (int i = 0; i < this.height; i++) {
+            for (int j = 0; j < matrix.width; j++) {
+                VectorMultiplication.multiplyVectors(newMatrix.getValues(i, j), getRow(i), matrix.getColumn(j));
+            }
+        }
+        return newMatrix;
     }
 
-    public Matrix multiply(Matrix matrix, int p) {
+    public Matrix multiplyThreads(Matrix matrix, int p) {
         if (this.width != matrix.height) {
             System.err.println("Illegal matrix parameters");
             return null;
         }
 
         Matrix newMatrix = new Matrix(this.height, matrix.width);
-        this.transposedMatrix();
-        matrix.transposedMatrix();
-
         ExecutorService executorService = Executors.newFixedThreadPool(p);
 
-        List<vectorMultiplication> task = new ArrayList<>();
+        List<VectorMultiplication> task = new ArrayList<>();
         for (int i = 0; i < this.height; i++) {
             for (int j = 0; j < matrix.width; j++) {
-                task.add(new vectorMultiplication(i, j, getRow(i), matrix.getTransposedRow(j)));
+                task.add(new VectorMultiplication(newMatrix.getValues(i, j), getRow(i), matrix.getColumn(j)));
             }
         }
         try {
-            List<Future<String>> futures = executorService.invokeAll(task);
-
+            executorService.invokeAll(task);
             executorService.shutdown();
             executorService.awaitTermination(10L, TimeUnit.SECONDS);
 
-            for (Future<String> i : futures) {
-                String[] s = i.get().split(" ");
-                int x = Integer.parseInt(s[0]);
-                int y = Integer.parseInt(s[1]);
-                Long res = Long.parseLong(s[2]);
-                newMatrix.setValues(x, y, res);
-            }
-        } catch (InterruptedException | ExecutionException e) {
+
+        } catch (InterruptedException exception) {
             System.err.println("Exception with multiply");
         }
         return newMatrix;
     }
+
 
     public void writeMatrixInFile(String filename) {
         try (FileWriter writer = new FileWriter(filename)) {
@@ -142,25 +132,29 @@ public class Matrix {
             e.printStackTrace();
         }
     }
-}
 
-class vectorMultiplication implements Callable<String> {
-    ArrayList<Long> first;
-    ArrayList<Long> second;
-    int i, j;
+    static class VectorMultiplication implements Callable<Void> {
+        List<Long> first;
+        List<Long> second;
+        Long arr;
 
-    public vectorMultiplication(int i, int j, ArrayList<Long> first, ArrayList<Long> second) {
-        this.i = i;
-        this.j = j;
-        this.first = first;
-        this.second = second;
-    }
+        public VectorMultiplication(Long arr, List<Long> first, List<Long> second) {
+            this.arr = arr;
+            this.first = first;
+            this.second = second;
+        }
 
-    @Override
-    public String call() {
-        long result = 0;
-        for (int k = 0; k < first.size(); k++)
-            result += first.get(k) * second.get(k);
-        return i + " " + j + " " + result;
+        public static void multiplyVectors(Long arr, List<Long> first, List<Long> second) {
+            long result = 0;
+            for (int k = 0; k < first.size(); k++)
+                result += first.get(k) * second.get(k);
+            arr = result;
+        }
+
+        @Override
+        public Void call() {
+            multiplyVectors(arr, first, second);
+            return null;
+        }
     }
 }
