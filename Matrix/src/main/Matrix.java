@@ -102,7 +102,7 @@ public class Matrix {
 
         for (int i = 0; i < this.height; i++) {
             for (int j = 0; j < matrix.width; j++) {
-                VectorMultiplication.multiplyVectors(newMatrix.getValues(i, j), getRow(i), matrix.getColumn(j));
+                newMatrix.setValues(i, j, VectorMultiplication.multiplyVectors(getRow(i), matrix.getColumn(j)));
             }
         }
         return newMatrix;
@@ -118,10 +118,8 @@ public class Matrix {
         ExecutorService executorService = Executors.newFixedThreadPool(p);
 
         List<VectorMultiplication> task = new ArrayList<>();
-        for (int i = 0; i < this.height; i++) {
-            for (int j = 0; j < matrix.width; j++) {
-                task.add(new VectorMultiplication(newMatrix.getValues(i, j), getRow(i), matrix.getColumn(j)));
-            }
+        for (int j = 0; j < matrix.width; j += p) {
+            task.add(new VectorMultiplication(this, matrix, j, j + p, newMatrix));
         }
         try {
             executorService.invokeAll(task);
@@ -130,7 +128,7 @@ public class Matrix {
 
 
         } catch (InterruptedException exception) {
-            System.err.println("Exception with multiply");
+            System.err.println("Exception with multiply with treads");
         }
         return newMatrix;
     }
@@ -149,26 +147,37 @@ public class Matrix {
     }
 
     static class VectorMultiplication implements Callable<Void> {
-        List<Long> first;
-        List<Long> second;
-        Long arr;
+        Matrix a;
+        Matrix b;
+        int start;
+        int end;
+        final Matrix ans;
 
-        public VectorMultiplication(Long arr, List<Long> first, List<Long> second) {
-            this.arr = arr;
-            this.first = first;
-            this.second = second;
+        public VectorMultiplication(Matrix a, Matrix b, int start, int end, Matrix ans) {
+            this.a = a;
+            this.b = b;
+            this.start = start;
+            this.end = end;
+            this.ans = ans;
         }
 
-        public static void multiplyVectors(Long arr, List<Long> first, List<Long> second) {
+        public static long multiplyVectors(List<Long> first, List<Long> second) {
             long result = 0;
             for (int k = 0; k < first.size(); k++)
                 result += first.get(k) * second.get(k);
-            arr = result;
+            return result;
         }
 
         @Override
         public Void call() {
-            multiplyVectors(arr, first, second);
+            for (int i = 0; i < a.height; i++) {
+                for (int j = start; j < end; j++) {
+                    Long res = multiplyVectors(a.getRow(i), b.getColumn(j));
+                    synchronized (ans) {
+                        ans.setValues(j, i, res);
+                    }
+                }
+            }
             return null;
         }
     }
